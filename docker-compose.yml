@@ -1,0 +1,21 @@
+services:
+  # Nama service kita, bisa apa saja (misal: 'api', 'web')
+  web:
+    # Perintah untuk membangun image.
+    # '.' berarti: gunakan Dockerfile yang ada di direktori saat ini.
+    build: .
+
+    # Memetakan port dari mesin host ke port di dalam container.
+    # Format: "HOST:CONTAINER"
+    # Permintaan ke http://localhost:5000 akan diteruskan ke port 5000 di container.
+    ports:
+      - "5000:5000"
+
+    # Memuat semua variabel dari file .env ke dalam lingkungan container.
+    # Ini adalah cara yang aman untuk menyediakan konfigurasi.
+    env_file:
+      - .env
+
+    # (Opsional) Mengatur agar container selalu restart jika berhenti,
+    # kecuali jika dihentikan secara manual. Baik untuk produksi.
+    restart: unless-stopped

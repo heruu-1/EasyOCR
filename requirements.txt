@@ -1,0 +1,20 @@
+# File: requirements.txt
+# Deskripsi: Versi stateless dari daftar dependensi.
+# Pustaka database telah dihapus.
+
+# --- Framework Web & Server ---
+Flask
+gunicorn
+python-dotenv
+Flask-Cors
+
+# --- OCR & Pemrosesan Gambar ---
+easyocr
+opencv-python-headless
+Pillow
+pdf2image
+numpy
+
+# --- Pemrosesan Teks & Utilitas ---
+pyspellchecker
+thefuzz[speedup]
