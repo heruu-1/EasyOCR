@@ -1,6 +1,5 @@
 # File: requirements.txt
-# Deskripsi: Versi stateless dari daftar dependensi.
-# Pustaka database telah dihapus.
+# Deskripsi: Versi optimasi. 'easyocr' dihapus karena akan diinstal manual di Dockerfile.
 
 # --- Framework Web & Server ---
 Flask
@@ -8,8 +7,7 @@ gunicorn
 python-dotenv
 Flask-Cors
 
-# --- OCR & Pemrosesan Gambar ---
-easyocr
+# --- Pemrosesan Gambar & PDF ---
 opencv-python-headless
 Pillow
 pdf2image
