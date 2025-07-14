@@ -23,6 +23,7 @@ app.config.from_object(Config)
 # Inisialisasi CORS untuk mengizinkan permintaan dari frontend
 CORS(app, origins=[
     "http://localhost:3000",
+    "https://proyek-pajak.vercel.app",
     os.environ.get("FRONTEND_URL")
 ], supports_credentials=True)
 
