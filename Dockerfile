@@ -1,53 +1,53 @@
 # File: Dockerfile
-# Deskripsi: Versi optimasi menggunakan multi-stage build untuk menghasilkan image yang kecil.
+# Deskripsi: Resep optimasi agresif untuk memaksa ukuran image menjadi kecil.
 
-# --- TAHAP 1: BUILDER ---
-# Tahap ini fokus untuk menginstal semua dependensi dengan benar.
-FROM python:3.10-slim as builder
+# Memulai dari base image yang spesifik dan ringan
+FROM python:3.10-slim-bullseye
+
+# Menetapkan beberapa variabel lingkungan untuk praktik terbaik
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # Menetapkan direktori kerja
 WORKDIR /app
 
-# Menginstal dependensi sistem yang dibutuhkan untuk build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Menginstal dependensi sistem yang dibutuhkan saat runtime,
+# lalu langsung membersihkan cache apt untuk menghemat ruang.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends poppler-utils libgl1-mesa-glx && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Membuat virtual environment untuk isolasi dependensi.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Meng-upgrade pip dan menginstal wheel untuk build yang lebih cepat
+RUN pip install --no-cache-dir --upgrade pip wheel
 
 # Menyalin file requirements.txt
 COPY requirements.txt .
 
-# Menginstal dependensi dengan --prefix untuk isolasi
-# Ini akan menginstal semua paket ke dalam folder /app/install
-RUN pip install --prefix=/app/install -r requirements.txt
+# --- LANGKAH KUNCI PENGINSTALAN ---
+# 1. Instal PyTorch versi CPU-only SECARA EKSPLISIT. Ini yang paling penting.
+RUN pip install --no-cache-dir torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 
-# Menginstal PyTorch versi CPU-only yang jauh lebih kecil
-RUN pip install --prefix=/app/install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# 2. Instal easyocr SETELAH torch terinstal.
+RUN pip install --no-cache-dir easyocr
 
-# Menginstal easyocr secara terpisah setelah PyTorch terinstal
-RUN pip install --prefix=/app/install easyocr
+# 3. Instal sisa dependensi dari requirements.txt.
+#    Pip akan melihat torch sudah ada dan tidak akan menginstalnya lagi.
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-# --- TAHAP 2: FINAL ---
-# Tahap ini fokus untuk membuat image akhir yang ramping.
-FROM python:3.10-slim
-
-# Menetapkan direktori kerja
-WORKDIR /app
-
-# Menginstal HANYA dependensi sistem yang dibutuhkan saat runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    poppler-utils \
-    libgl1-mesa-glx \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Menyalin pustaka Python yang sudah terinstal dari tahap builder
-COPY --from=builder /app/install /usr/local
+# --- TAHAP PEMBERSIHAN EKSTREM ---
+# Membersihkan semua cache yang mungkin tersisa untuk mengecilkan ukuran akhir
+RUN rm -rf /root/.cache
 
 # Menyalin kode aplikasi Anda
 COPY ./app /app/app
 
-# Mengekspos port aplikasi
+# Menetapkan port
 EXPOSE 5000
 
-# Perintah untuk menjalankan aplikasi
+# Menjalankan aplikasi menggunakan python dari virtual environment
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "3", "app.app:app"]
