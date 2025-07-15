@@ -1,6 +1,10 @@
 import re
 
 def parse_kode_setor(full_text):
+    # Validasi input
+    if not full_text or not isinstance(full_text, str):
+        return None
+        
     rek_patterns = [
         r"(rek|debet|debit)[\s\S]{0,25}(\d[\d\s-]{8,}\d)",
         r"(referensi)[\s\S]{0,15}(\w+)",

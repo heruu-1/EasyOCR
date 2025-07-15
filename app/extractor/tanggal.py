@@ -3,6 +3,10 @@ from datetime import datetime
 from app.utils.helpers import fuzzy_month_match
 # utils/parsing/tanggal.py
 def parse_tanggal(text_blocks):
+    # Validasi input
+    if not text_blocks or not isinstance(text_blocks, (list, tuple)):
+        return None
+    
     date_pattern_fuzzy = re.compile(r"(\d{1,2})\s+([a-zA-Z]{3,})\s+(\d{4})", re.IGNORECASE)
     date_pattern_slash = re.compile(r"(\d{1,2})[-/ ](\d{1,2})[-/ ](\d{4})")
 
@@ -14,6 +18,10 @@ def parse_tanggal(text_blocks):
     all_months.update({k[:3]: v for k, v in all_months.items()})
 
     for text in text_blocks:
+        # Skip empty or None text
+        if not text or not isinstance(text, str):
+            continue
+            
         match_fuzzy = date_pattern_fuzzy.search(text)
         if match_fuzzy:
             day, month_ocr, year = match_fuzzy.groups()

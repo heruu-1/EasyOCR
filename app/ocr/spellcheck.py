@@ -10,4 +10,14 @@ except Exception as e:
     print(f"Error memuat kamus Indonesia: {e}")
 
 def correct_spelling(text):
-    return ' '.join([SPELL.correction(w) if w not in SPELL and SPELL.correction(w) else w for w in text.split()])
+    corrected_words = []
+    for w in text.split():
+        if w not in SPELL:
+            correction = SPELL.correction(w)
+            if correction:  # Pastikan correction tidak None
+                corrected_words.append(correction)
+            else:
+                corrected_words.append(w)  # Gunakan kata asli jika tidak ada koreksi
+        else:
+            corrected_words.append(w)
+    return ' '.join(corrected_words)

@@ -4,6 +4,8 @@
 
 # --- 1. Impor Pustaka Standar & Pihak Ketiga ---
 import os
+import uuid
+import time
 import traceback
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -59,9 +61,9 @@ def process_bukti_setor_endpoint():
         return jsonify(error="Jenis file tidak didukung"), 400
 
     upload_folder = app.config['UPLOAD_FOLDER']
-    # Memberikan nama file yang unik untuk menghindari konflik
-    # (opsional tapi praktik yang baik)
-    safe_filename = file.filename 
+    # Buat nama file yang unik untuk menghindari konflik
+    file_extension = os.path.splitext(file.filename)[1]
+    safe_filename = f"{uuid.uuid4()}_{int(time.time())}{file_extension}"
     filepath = os.path.join(upload_folder, safe_filename)
     file.save(filepath)
 
