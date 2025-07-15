@@ -29,7 +29,7 @@
 ### Docker Optimizations
 
 - Multi-stage virtual environment
-- Optimized system dependencies
+- Minimal system dependencies (tesseract, poppler, OpenGL)
 - Environment variables for threading control
 - Memory arena optimization
 - Clean package cache
@@ -85,6 +85,33 @@ OMP_NUM_THREADS=1
 3. **OCR failures**: Check `/health/deep` endpoint
 4. **Startup delays**: Normal for first-time model download
 
+### Docker Build Issues
+
+1. **Package not found errors**:
+   - **Solution 1**: Use `Dockerfile.simple` (minimal dependencies)
+   - **Solution 2**: Try different base images (ubuntu:20.04, debian:bullseye)
+   - **Solution 3**: Test dependencies with `./test-deps.sh`
+2. **Available Dockerfiles**:
+
+   ```bash
+   # Main Dockerfile (optimized)
+   docker build -t easyocr-app .
+
+   # Simple Dockerfile (minimal dependencies)
+   docker build -f Dockerfile.simple -t easyocr-app .
+   ```
+
+3. **Build failures**:
+
+   - Check package availability in base image
+   - Some packages may not exist in slim-bullseye
+   - Try with full debian:bullseye if needed
+
+4. **Memory issues during build**:
+   - Increase Docker memory limit to 4GB+
+   - Use multi-stage build cleanup
+   - Remove intermediate containers: `docker system prune`
+
 ### Monitoring Commands
 
 ```bash
@@ -101,10 +128,20 @@ curl -X POST -F "file=@test.pdf" https://your-app.railway.app/api/bukti_setor/pr
 ## 🔄 Deployment Process
 
 1. **Build**: Railway builds Docker image with optimizations
+   - **Fixed**: Removed problematic packages (libgthread-2.0-0)
+   - **Using**: Minimal reliable dependencies only
+   - **Alternative**: Dockerfile.simple for ultra-minimal build
 2. **Deploy**: Single worker starts with preloaded app
 3. **Initialize**: OCR engine loads on first request (lazy loading)
 4. **Monitor**: Health checks provide system status
 5. **Scale**: Auto-restart on failures (max 3 retries)
+
+### Railway-Specific Notes
+
+- Uses Docker buildpack with slim-bullseye base
+- Some packages may not be available in Railway's environment
+- Fallback to essential packages only if build fails
+- Test locally first: `docker build -f Dockerfile.simple .`
 
 ## 📝 Logs to Monitor
 
