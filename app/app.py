@@ -84,6 +84,6 @@ def process_bukti_setor_endpoint():
 
 if __name__ == "__main__":
     # Port diambil dari file .env, dengan default 5000
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8000))
     # 'host="0.0.0.0"' membuat server dapat diakses dari luar container Docker
     app.run(host="0.0.0.0", port=port, debug=True)
