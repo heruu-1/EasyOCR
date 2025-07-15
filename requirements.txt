@@ -1,5 +1,6 @@
 Flask==3.0.0
 Flask-CORS==4.0.0
+Flask-SQLAlchemy==3.1.1
 pytesseract==0.3.10
 Pillow==10.1.0
 opencv-python-headless==4.8.1.78
@@ -7,3 +8,4 @@ pdf2image==1.17.0
 numpy==1.25.2
 python-dotenv==1.0.0
 gunicorn==21.2.0
+openpyxl==3.1.2
