@@ -1,12 +1,23 @@
 # simple_app.py - Versi sederhana untuk testing deployment
 import os
 import logging
+import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Setup logging untuk production
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 logger = logging.getLogger(__name__)
+
+# Suppress OpenCV/libGL warnings in headless environment
+os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '0'
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 app = Flask(__name__)
 
@@ -70,16 +81,20 @@ def test_cors():
 @app.route("/api/bukti_setor/process", methods=["POST", "OPTIONS"])
 def process_bukti_setor():
     if request.method == "OPTIONS":
-        # Handle preflight CORS request
+        logger.info("🔧 CORS preflight request received")
         response = jsonify({"status": "preflight ok"})
         return response
         
-    logger.info("🚀 Bukti setor process endpoint called")
+    logger.info("🚀 POST /api/bukti_setor/process endpoint called")
+    logger.info(f"   Origin: {request.headers.get('Origin', 'Not set')}")
+    logger.info(f"   User-Agent: {request.headers.get('User-Agent', 'Not set')[:50]}...")
+    logger.info(f"   Content-Type: {request.headers.get('Content-Type', 'Not set')}")
     logger.info(f"   Files in request: {list(request.files.keys())}")
     logger.info(f"   Form data: {list(request.form.keys())}")
     
     # Simulasi check file upload
     if 'file' not in request.files:
+        logger.warning("❌ No file in request")
         return jsonify({
             "error": "No file uploaded",
             "demo_mode": True
@@ -87,14 +102,16 @@ def process_bukti_setor():
     
     file = request.files['file']
     if file.filename == '':
+        logger.warning("❌ Empty filename")
         return jsonify({
-            "error": "No file selected",
+            "error": "No file selected", 
             "demo_mode": True
         }), 400
     
-    logger.info(f"   Uploaded file: {file.filename}")
+    logger.info(f"✅ File received: {file.filename} ({file.content_type})")
     
-    return jsonify({
+    # Generate demo response
+    demo_response = {
         "success": True,
         "data": [{
             "kode_setor": "411211",
@@ -102,10 +119,13 @@ def process_bukti_setor():
             "jumlah": 1500000,
             "ntpn": "1234567890123456",
             "preview_filename": f"demo_{file.filename}",
-            "warning_message": "Demo data - OCR akan aktif setelah full deployment"
+            "warning_message": "✨ Demo data - OCR akan aktif setelah full deployment"
         }],
-        "message": f"Demo response for file: {file.filename}"
-    })
+        "message": f"📄 Demo response for file: {file.filename}"
+    }
+    
+    logger.info(f"📤 Sending demo response for: {file.filename}")
+    return jsonify(demo_response)
 
 @app.route("/api/bukti_setor/uploads/<filename>")
 def serve_preview(filename):
