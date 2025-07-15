@@ -13,7 +13,7 @@ from flask import current_app
 # --- Impor Lokal dari Struktur Proyek ---
 
 # 1. Komponen Inti OCR
-from app.ocr.ocr_engine import OCR_READER
+from app.ocr.ocr_engine import get_ocr_reader
 from app.ocr.spellcheck import correct_spelling
 
 # 2. Fungsi Utilitas
@@ -73,7 +73,11 @@ def _extract_data_from_image(pil_image, upload_folder, page_num=1):
 
     # 4. Jalankan EasyOCR pada gambar yang sudah bersih
     # `paragraph=False` mengembalikan teks per baris, lebih mudah diproses.
-    ocr_results = OCR_READER.readtext(processed_img, detail=1, paragraph=False)
+    ocr_reader = get_ocr_reader()
+    if not ocr_reader:
+        raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi.")
+    
+    ocr_results = ocr_reader.readtext(processed_img, detail=1, paragraph=False)
 
     # 5. Pembersihan dan Koreksi Ejaan
     # a. Ambil teksnya saja, bersihkan spasi, dan ubah ke huruf kecil.
@@ -117,13 +121,17 @@ def extract_bukti_setor_data(filepath, poppler_path=None):
     upload_folder = current_app.config['UPLOAD_FOLDER']
 
     # Pengaman: Pastikan EasyOCR sudah siap sebelum melanjutkan.
-    if not OCR_READER:
+    ocr_reader = get_ocr_reader()
+    if not ocr_reader:
         current_app.logger.error("EasyOCR reader tidak berhasil diinisialisasi.")
         # Coba inisialisasi ulang
         try:
             from app.ocr.ocr_engine import initialize_ocr
             if not initialize_ocr():
                 raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi setelah retry.")
+            ocr_reader = get_ocr_reader()
+            if not ocr_reader:
+                raise ConnectionError("EasyOCR reader masih tidak tersedia setelah retry.")
         except Exception as e:
             current_app.logger.error(f"Gagal menginisialisasi EasyOCR: {e}")
             raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi.")

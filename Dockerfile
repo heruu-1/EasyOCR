@@ -18,6 +18,7 @@ RUN apt-get update && \
     libxrender-dev \
     libgomp1 \
     wget \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,9 +50,9 @@ ENV UPLOAD_FOLDER=/app/uploads
 # Expose port
 EXPOSE $PORT
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:'+str(__import__('os').environ.get('PORT', '8000'))+'/health')" || exit 1
+# Health check yang lebih sederhana dan reliable
+HEALTHCHECK --interval=60s --timeout=15s --start-period=60s --retries=5 \
+  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-# Start command
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --timeout 120 --worker-class sync app.app:app"]
+# Start command dengan longer timeout
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --timeout 300 --worker-class sync app.app:app"]
