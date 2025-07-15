@@ -1,17 +1,21 @@
 # File: requirements.txt
-# Deskripsi: Versi optimasi. 'easyocr' dihapus karena akan diinstal manual di Dockerfile.
+# Deskripsi: Dependencies untuk EasyOCR application
 
 # --- Framework Web & Server ---
 Flask
 gunicorn
 python-dotenv
 Flask-Cors
+requests
 
 # --- Pemrosesan Gambar & PDF ---
 opencv-python-headless
 Pillow
 pdf2image
 numpy
+
+# --- OCR Engine ---
+easyocr
 
 # --- Pemrosesan Teks & Utilitas ---
 pyspellchecker

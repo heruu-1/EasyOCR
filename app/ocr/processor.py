@@ -53,9 +53,16 @@ def _extract_data_from_image(pil_image, upload_folder, page_num=1):
 
     # 2. Standardisasi Ukuran Gambar
     # Mencegah overhead pada gambar beresolusi sangat tinggi dan menstandardisasi input.
-    MAX_WIDTH = 1200
+    # Kurangi ukuran maksimal untuk deployment
+    MAX_WIDTH = 800  # Dikurangi dari 1200 untuk menghemat memory
     if img_cv.shape[1] > MAX_WIDTH:
         ratio = MAX_WIDTH / img_cv.shape[1]
+        img_cv = cv2.resize(img_cv, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_AREA)
+        
+    # Optimization: Batasi tinggi juga
+    MAX_HEIGHT = 1000
+    if img_cv.shape[0] > MAX_HEIGHT:
+        ratio = MAX_HEIGHT / img_cv.shape[0]
         img_cv = cv2.resize(img_cv, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_AREA)
 
     # 3. Terapkan Denoising
@@ -111,7 +118,15 @@ def extract_bukti_setor_data(filepath, poppler_path=None):
 
     # Pengaman: Pastikan EasyOCR sudah siap sebelum melanjutkan.
     if not OCR_READER:
-        raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi.")
+        current_app.logger.error("EasyOCR reader tidak berhasil diinisialisasi.")
+        # Coba inisialisasi ulang
+        try:
+            from app.ocr.ocr_engine import initialize_ocr
+            if not initialize_ocr():
+                raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi setelah retry.")
+        except Exception as e:
+            current_app.logger.error(f"Gagal menginisialisasi EasyOCR: {e}")
+            raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi.")
 
     list_of_results = []
 
