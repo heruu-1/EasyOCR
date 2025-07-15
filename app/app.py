@@ -2,13 +2,14 @@
 # Deskripsi: Versi stateless dari entry point utama.
 # Fokus murni pada pemrosesan file dan pengembalian data JSON, tanpa interaksi database.
 
-# --- 1. Impor Pustaka Standar & Pihak Ketiga ---
 import os
 import uuid
 import time
 import traceback
+import logging
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # --- 2. Impor Modul Lokal ---
 from app.config import Config
@@ -22,19 +23,37 @@ from app.utils.helpers import allowed_file
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Batasi ukuran file upload (5MB)
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+# Add ProxyFix for deployment behind reverse proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# Inisialisasi CORS untuk mengizinkan permintaan dari frontend
-CORS(app, origins=[
+# Setup logging
+logging.basicConfig(
+    level=getattr(logging, app.config.get('LOG_LEVEL', 'INFO')),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Batasi ukuran file upload 
+app.config['MAX_CONTENT_LENGTH'] = app.config.get('MAX_CONTENT_LENGTH', 10 * 1024 * 1024)
+
+# Inisialisasi CORS dengan konfigurasi yang lebih fleksibel
+cors_origins = app.config.get('CORS_ORIGINS', [
     "http://localhost:3000",
-    "https://proyek-pajak.vercel.app",
-    os.environ.get("FRONTEND_URL")
-], supports_credentials=True)
+    "https://proyek-pajak.vercel.app"
+])
+if isinstance(cors_origins, str):
+    cors_origins = cors_origins.split(",")
+
+# Add environment variable for frontend URL
+if os.environ.get("FRONTEND_URL"):
+    cors_origins.append(os.environ.get("FRONTEND_URL"))
+
+CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Membuat folder upload jika belum ada
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
+upload_folder = app.config['UPLOAD_FOLDER']
+if not os.path.exists(upload_folder):
+    os.makedirs(upload_folder, exist_ok=True)
+    app.logger.info(f"📁 Created upload folder: {upload_folder}")
 
 # ==============================================================================
 # Definisi Endpoint API (Routes)
@@ -47,12 +66,39 @@ def index():
 
 @app.route("/health")
 def health_check():
-    """Health check endpoint untuk monitoring - lebih permisif untuk deployment."""
+    """Health check endpoint yang komprehensif."""
     try:
-        # Basic health check yang tidak bergantung pada EasyOCR
+        # Basic health metrics
+        import psutil
+        import gc
+        
+        # Memory info
+        memory_info = psutil.virtual_memory()
+        
+        health_data = {
+            "status": "ok",
+            "message": "Service is running",
+            "ready": True,
+            "timestamp": time.time(),
+            "system": {
+                "memory_percent": memory_info.percent,
+                "memory_available": memory_info.available // (1024*1024),  # MB
+                "cpu_percent": psutil.cpu_percent(interval=1),
+            },
+            "app": {
+                "upload_folder": app.config['UPLOAD_FOLDER'],
+                "max_file_size": app.config['MAX_CONTENT_LENGTH'] // (1024*1024),  # MB
+                "flask_env": app.config.get('FLASK_ENV', 'unknown')
+            }
+        }
+        
+        return jsonify(health_data), 200
+        
+    except ImportError:
+        # Fallback if psutil not available
         return jsonify({
             "status": "ok", 
-            "message": "Service is running",
+            "message": "Service is running (basic check)",
             "ready": True,
             "timestamp": time.time()
         }), 200
@@ -65,22 +111,31 @@ def health_check():
 
 @app.route("/health/deep")
 def deep_health_check():
-    """Deep health check yang mengecek EasyOCR."""
+    """Deep health check yang mengecek EasyOCR dan dependencies."""
     try:
         from app.ocr.ocr_engine import get_ocr_reader
+        import torch
+        import cv2
+        
+        # Check OCR availability
         ocr_reader = get_ocr_reader()
-        if ocr_reader is None:
-            return jsonify({
-                "status": "warning", 
-                "message": "EasyOCR not initialized",
-                "ready": False
-            }), 503
-        return jsonify({
-            "status": "ok", 
-            "message": "Service is fully healthy",
+        ocr_status = ocr_reader is not None
+        
+        health_data = {
+            "status": "ok" if ocr_status else "warning",
+            "message": "Service is fully healthy" if ocr_status else "OCR not ready",
             "ready": True,
-            "ocr_ready": True
-        }), 200
+            "ocr_ready": ocr_status,
+            "dependencies": {
+                "torch_version": torch.__version__,
+                "opencv_version": cv2.__version__,
+                "cuda_available": torch.cuda.is_available(),
+                "torch_threads": torch.get_num_threads()
+            }
+        }
+        
+        return jsonify(health_data), 200 if ocr_status else 503
+        
     except Exception as e:
         return jsonify({
             "status": "error", 
@@ -155,5 +210,10 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     # Debug mode hanya untuk development
     debug_mode = os.environ.get("FLASK_ENV") == "development"
+    
+    print(f"🚀 Starting EasyOCR Application on port {port}")
+    print(f"📁 Upload folder: {app.config.get('UPLOAD_FOLDER', 'uploads')}")
+    print(f"🔧 Debug mode: {debug_mode}")
+    
     # 'host="0.0.0.0"' membuat server dapat diakses dari luar container Docker
     app.run(host="0.0.0.0", port=port, debug=debug_mode)

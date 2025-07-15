@@ -6,7 +6,9 @@ Flask
 gunicorn
 python-dotenv
 Flask-Cors
-requests
+
+# --- System Monitoring ---
+psutil
 
 # --- Pemrosesan Gambar & PDF ---
 opencv-python-headless

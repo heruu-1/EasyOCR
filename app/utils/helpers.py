@@ -33,10 +33,37 @@ def simpan_preview_image(pil_image, upload_folder, page_num, original_filename="
         return None
 
 def preprocess_for_ocr(image):
-    """Memproses gambar untuk OCR dengan denoising."""
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    denoised = cv2.fastNlMeansDenoising(gray, None, 10, 7, 21)
-    return denoised
+    """Memproses gambar untuk OCR dengan denoising yang optimal."""
+    try:
+        # Convert to grayscale efficiently
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image.copy()
+        
+        # Apply denoising with optimized parameters
+        denoised = cv2.fastNlMeansDenoising(
+            gray, 
+            None, 
+            h=10,           # Filter strength
+            templateWindowSize=7,  # Template patch size
+            searchWindowSize=21    # Search window size
+        )
+        
+        # Optional: Apply slight sharpening for better OCR
+        kernel = np.array([[-1,-1,-1],
+                          [-1, 9,-1],
+                          [-1,-1,-1]])
+        sharpened = cv2.filter2D(denoised, -1, kernel)
+        
+        # Blend original and sharpened (subtle effect)
+        result = cv2.addWeighted(denoised, 0.8, sharpened, 0.2, 0)
+        
+        return result
+        
+    except Exception as e:
+        current_app.logger.warning(f"Preprocessing failed, using original: {e}")
+        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
 
 def allowed_file(filename, allowed_extensions):
     """Memeriksa apakah file memiliki ekstensi yang diizinkan."""

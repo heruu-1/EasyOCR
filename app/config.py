@@ -6,16 +6,33 @@ load_dotenv()
 
 class Config:
     """
-    Class Konfigurasi Utama (Stateless).
+    Class Konfigurasi Utama dengan optimasi production.
     """
 
     # --- Konfigurasi Path Eksternal ---
-    # Mengambil path ke instalasi Poppler, yang dibutuhkan oleh pdf2image.
-    POPPLER_PATH = os.getenv("POPPLER_PATH")
+    POPPLER_PATH = os.getenv("POPPLER_PATH", "/usr/bin")
 
     # --- Konfigurasi File Upload ---
-    # Menentukan nama folder untuk menyimpan file yang diunggah sementara.
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "uploads")
-
-    # Mengambil daftar ekstensi file yang diizinkan dari .env.
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB max file size
+    
+    # Ekstensi file yang diizinkan
     ALLOWED_EXTENSIONS = set(os.getenv("ALLOWED_EXTENSIONS", "pdf,jpg,jpeg,png").split(","))
+    
+    # --- Performance Settings ---
+    MAX_PAGES_PER_PDF = int(os.getenv("MAX_PAGES_PER_PDF", "10"))
+    OCR_DPI = int(os.getenv("OCR_DPI", "150"))
+    MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", "800"))
+    
+    # --- Logging Settings ---
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    
+    # --- Security Settings ---
+    SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-change-in-production")
+    
+    # --- CORS Settings ---
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    
+    # --- Environment Detection ---
+    FLASK_ENV = os.getenv("FLASK_ENV", "production")
+    DEBUG = FLASK_ENV == "development"

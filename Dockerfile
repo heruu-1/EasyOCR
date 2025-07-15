@@ -1,15 +1,20 @@
 FROM python:3.10-slim-bullseye
 
+# Environment variables untuk optimasi
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
+ENV MALLOC_ARENA_MAX=2
+ENV PYTHONHASHSEED=random
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies dengan optimasi
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-ind \
     poppler-utils \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -17,42 +22,46 @@ RUN apt-get update && \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    libgthread-2.0-0 \
+    libfontconfig1 \
+    libxss1 \
     wget \
-    curl \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/*
 
 # Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip wheel
+# Upgrade pip dengan optimasi cache
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 
-# Install PyTorch CPU version first
+# Install PyTorch CPU version dengan optimasi
 RUN pip install --no-cache-dir torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 
-# Copy requirements and install Python dependencies
+# Copy requirements dan install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
+# Create uploads directory dengan permissions
+RUN mkdir -p /app/uploads && chmod 755 /app/uploads
 
-# Set environment variables
+# Set environment variables untuk production
 ENV FLASK_APP=app.app
 ENV FLASK_ENV=production
 ENV UPLOAD_FOLDER=/app/uploads
+ENV PYTHONPATH=/app
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV NUMEXPR_NUM_THREADS=1
 
 # Expose port
 EXPOSE $PORT
 
-# Health check yang lebih sederhana dan reliable
-HEALTHCHECK --interval=60s --timeout=15s --start-period=60s --retries=5 \
-  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
-
-# Start command dengan longer timeout
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --timeout 300 --worker-class sync app.app:app"]
+# Start command dengan optimasi memory dan worker
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --worker-class sync --worker-connections 10 --max-requests 100 --max-requests-jitter 10 --timeout 300 --keep-alive 5 --preload app.app:app"]
