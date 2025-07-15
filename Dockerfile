@@ -57,5 +57,5 @@ ENV NUMEXPR_NUM_THREADS=1
 # Expose port
 EXPOSE 8000
 
-# Start command dengan optimasi memory dan worker
-CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --worker-class sync --worker-connections 10 --max-requests 100 --max-requests-jitter 10 --timeout 300 --keep-alive 5 --preload app.app:app"]
+# Jalankan Gunicorn (untuk production server)
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app.app:app"]

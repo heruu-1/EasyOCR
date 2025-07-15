@@ -1,21 +1,23 @@
 services:
-  # Nama service kita, bisa apa saja (misal: 'api', 'web')
+  # EasyOCR Web Service
   web:
-    # Perintah untuk membangun image.
-    # '.' berarti: gunakan Dockerfile yang ada di direktori saat ini.
-    build: .
+    # Build using Dockerfile.minimal (yang proven work)
+    build:
+      context: .
+      dockerfile: Dockerfile.minimal
 
-    # Memetakan port dari mesin host ke port di dalam container.
-    # Format: "HOST:CONTAINER"
-    # Permintaan ke http://localhost:5000 akan diteruskan ke port 5000 di container.
+    # Map port 8000 (sesuai dengan setup Railway)
     ports:
-      - "5000:5000"
+      - "8000:8000"
 
-    # Memuat semua variabel dari file .env ke dalam lingkungan container.
-    # Ini adalah cara yang aman untuk menyediakan konfigurasi.
+    # Load environment variables
     env_file:
       - .env
 
-    # (Opsional) Mengatur agar container selalu restart jika berhenti,
-    # kecuali jika dihentikan secara manual. Baik untuk produksi.
+    # Restart policy
     restart: unless-stopped
+
+    # Environment variables untuk testing
+    environment:
+      - PORT=8000
+      - FLASK_ENV=production

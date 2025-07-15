@@ -89,24 +89,27 @@ OMP_NUM_THREADS=1
 
 1. **Package not found errors**:
 
-   - **Solution 1**: Use `Dockerfile.simple` (minimal dependencies)
-   - **Solution 2**: Try different base images (ubuntu:20.04, debian:bullseye)
+   - **Solution 1**: Use `Dockerfile.minimal` (ultra minimal, berdasarkan repo referensi yang sukses)
+   - **Solution 2**: Use `Dockerfile.simple` (minimal dependencies)
    - **Solution 3**: Test dependencies with `./test-deps.sh`
 
 2. **Port configuration errors**:
 
-   - **Fixed**: Removed invalid `$PORT` in EXPOSE directive
-   - **Using**: Static port 8000 with dynamic binding in CMD
-   - Railway will set PORT environment variable correctly
+   - **FIXED**: Removed complex variable substitution in CMD
+   - **USING**: Simple `gunicorn -b 0.0.0.0:8000 app.app:app` (sesuai repo referensi)
+   - **WORKING**: Railway akan inject PORT variable secara otomatis
 
 3. **Available Dockerfiles**:
 
    ```bash
-   # Main Dockerfile (optimized)
-   docker build -t easyocr-app .
+   # Minimal Dockerfile (berdasarkan repo referensi yang berhasil)
+   docker build -f Dockerfile.minimal -t easyocr-app .
 
    # Simple Dockerfile (minimal dependencies)
    docker build -f Dockerfile.simple -t easyocr-app .
+
+   # Main Dockerfile (optimized, tapi lebih kompleks)
+   docker build -t easyocr-app .
    ```
 
 4. **Build failures**:
@@ -148,10 +151,10 @@ curl -X POST -F "file=@test.pdf" https://your-app.railway.app/api/bukti_setor/pr
 ### Railway-Specific Notes
 
 - Uses Docker buildpack with slim-bullseye base
+- **FIXED**: Simplified CMD command berdasarkan repo referensi yang sukses
+- **USING**: `gunicorn -b 0.0.0.0:$PORT app.app:app` (format yang proven work)
 - PORT environment variable handled correctly in CMD
-- Some packages may not be available in Railway's environment
-- Fallback to essential packages only if build fails
-- Test locally first: `docker build -f Dockerfile.simple .`
+- Test locally first: `docker build -f Dockerfile.minimal .`
 
 ## 📝 Logs to Monitor
 
