@@ -3,6 +3,7 @@
 ## 🚀 Optimizations Implemented
 
 ### Memory Management
+
 - Lazy loading EasyOCR (initialize on first use)
 - Aggressive garbage collection after processing
 - Image size optimization (max 800px width, 1000px height)
@@ -10,6 +11,7 @@
 - Memory cleanup after each page processing
 
 ### Performance Enhancements
+
 - Single worker with optimized connections
 - Request recycling (max 100 requests per worker)
 - Reduced DPI for PDF conversion (150 DPI)
@@ -17,6 +19,7 @@
 - Connection keepalive for better performance
 
 ### Error Handling & Monitoring
+
 - Comprehensive health checks (`/health` and `/health/deep`)
 - System resource monitoring with psutil
 - Better error messages and logging
@@ -24,6 +27,7 @@
 - Request timeout handling (300s)
 
 ### Docker Optimizations
+
 - Multi-stage virtual environment
 - Optimized system dependencies
 - Environment variables for threading control
@@ -31,6 +35,7 @@
 - Clean package cache
 
 ## 📊 Resource Usage
+
 - **Memory**: Optimized for 512MB-1GB containers
 - **CPU**: Single-threaded with controlled OpenMP threads
 - **Storage**: Minimal with automatic cleanup
@@ -39,6 +44,7 @@
 ## 🔧 Configuration Variables
 
 ### Required Environment Variables
+
 ```
 PORT=8000
 FLASK_ENV=production
@@ -46,6 +52,7 @@ UPLOAD_FOLDER=uploads
 ```
 
 ### Optional Optimization Variables
+
 ```
 MAX_PAGES_PER_PDF=10
 OCR_DPI=150
@@ -72,12 +79,14 @@ OMP_NUM_THREADS=1
 ## 🚨 Troubleshooting
 
 ### Common Issues
+
 1. **Memory errors**: Reduce MAX_IMAGE_SIZE or MAX_PAGES_PER_PDF
 2. **Timeout errors**: Increase gunicorn timeout
 3. **OCR failures**: Check `/health/deep` endpoint
 4. **Startup delays**: Normal for first-time model download
 
 ### Monitoring Commands
+
 ```bash
 # Check health
 curl https://your-app.railway.app/health
