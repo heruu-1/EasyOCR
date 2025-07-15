@@ -1,53 +1,41 @@
-# File: Dockerfile
-# Deskripsi: Resep optimasi agresif untuk memaksa ukuran image menjadi kecil.
+# Dockerfile — Deployment Minimalis dan Optimal untuk Railway
+# ===========================================================
 
-# Memulai dari base image yang spesifik dan ringan
 FROM python:3.10-slim-bullseye
 
-# Menetapkan beberapa variabel lingkungan untuk praktik terbaik
+# Lingkungan minimal
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Menetapkan direktori kerja
+# Direktori kerja
 WORKDIR /app
 
-# Menginstal dependensi sistem yang dibutuhkan saat runtime,
-# lalu langsung membersihkan cache apt untuk menghemat ruang.
+# Instalasi dependensi sistem untuk OCR
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends poppler-utils libgl1-mesa-glx && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    poppler-utils \
+    libgl1-mesa-glx && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Membuat virtual environment untuk isolasi dependensi.
+# Virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Meng-upgrade pip dan menginstal wheel untuk build yang lebih cepat
+# Upgrade pip dan wheel
 RUN pip install --no-cache-dir --upgrade pip wheel
 
-# Menyalin file requirements.txt
+# Salin dan install requirements
 COPY requirements.txt .
-
-# --- LANGKAH KUNCI PENGINSTALAN ---
-# 1. Instal PyTorch versi CPU-only SECARA EKSPLISIT. Ini yang paling penting.
 RUN pip install --no-cache-dir torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
-
-# 2. Instal easyocr SETELAH torch terinstal.
 RUN pip install --no-cache-dir easyocr
-
-# 3. Instal sisa dependensi dari requirements.txt.
-#    Pip akan melihat torch sudah ada dan tidak akan menginstalnya lagi.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- TAHAP PEMBERSIHAN EKSTREM ---
-# Membersihkan semua cache yang mungkin tersisa untuk mengecilkan ukuran akhir
-RUN rm -rf /root/.cache
+# Salin seluruh kode (anggap app.py ada di root /app)
+COPY . .
 
-# Menyalin kode aplikasi Anda
-COPY ./app /app/app
+# Buka port (Railway akan inject PORT-nya)
+EXPOSE 8000
 
-# Menetapkan port
-EXPOSE 5000
-
-# Menjalankan aplikasi menggunakan python dari virtual environment
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "3", "app.app:app"]
+# Jalankan server pakai env PORT → fallback ke 8000 jika tidak diset
+CMD ["sh", "-c", "gunicorn -b 0.0.0.0:${PORT:-8000} app:app"]
