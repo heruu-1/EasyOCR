@@ -81,7 +81,8 @@ docker-compose up -d
    - `app.py`
    - `requirements.txt`
    - `Dockerfile`
-   - `railway.toml`
+   - `nixpacks.toml`
+   - `Procfile`
 
 ### Langkah 2: Deploy ke Railway
 

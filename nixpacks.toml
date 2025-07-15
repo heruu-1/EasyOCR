@@ -1,0 +1,11 @@
+[start]
+cmd = "gunicorn --bind 0.0.0.0:$PORT app:app --workers=2 --timeout=300"
+
+[phases.setup]
+nixPkgs = ["python39", "tesseract", "poppler_utils"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[variables]
+PYTHONPATH = "/app"
