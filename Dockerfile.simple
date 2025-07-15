@@ -46,7 +46,7 @@ ENV PYTHONPATH=/app
 ENV OMP_NUM_THREADS=1
 
 # Expose port
-EXPOSE $PORT
+EXPOSE 8000
 
 # Start command
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --worker-class sync --timeout 300 --preload app.app:app"]
+CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --worker-class sync --timeout 300 --preload app.app:app"]

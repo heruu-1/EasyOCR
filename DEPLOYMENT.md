@@ -88,10 +88,18 @@ OMP_NUM_THREADS=1
 ### Docker Build Issues
 
 1. **Package not found errors**:
+
    - **Solution 1**: Use `Dockerfile.simple` (minimal dependencies)
    - **Solution 2**: Try different base images (ubuntu:20.04, debian:bullseye)
    - **Solution 3**: Test dependencies with `./test-deps.sh`
-2. **Available Dockerfiles**:
+
+2. **Port configuration errors**:
+
+   - **Fixed**: Removed invalid `$PORT` in EXPOSE directive
+   - **Using**: Static port 8000 with dynamic binding in CMD
+   - Railway will set PORT environment variable correctly
+
+3. **Available Dockerfiles**:
 
    ```bash
    # Main Dockerfile (optimized)
@@ -101,13 +109,13 @@ OMP_NUM_THREADS=1
    docker build -f Dockerfile.simple -t easyocr-app .
    ```
 
-3. **Build failures**:
+4. **Build failures**:
 
    - Check package availability in base image
    - Some packages may not exist in slim-bullseye
    - Try with full debian:bullseye if needed
 
-4. **Memory issues during build**:
+5. **Memory issues during build**:
    - Increase Docker memory limit to 4GB+
    - Use multi-stage build cleanup
    - Remove intermediate containers: `docker system prune`
@@ -129,6 +137,7 @@ curl -X POST -F "file=@test.pdf" https://your-app.railway.app/api/bukti_setor/pr
 
 1. **Build**: Railway builds Docker image with optimizations
    - **Fixed**: Removed problematic packages (libgthread-2.0-0)
+   - **Fixed**: Port configuration error ($PORT in EXPOSE)
    - **Using**: Minimal reliable dependencies only
    - **Alternative**: Dockerfile.simple for ultra-minimal build
 2. **Deploy**: Single worker starts with preloaded app
@@ -139,6 +148,7 @@ curl -X POST -F "file=@test.pdf" https://your-app.railway.app/api/bukti_setor/pr
 ### Railway-Specific Notes
 
 - Uses Docker buildpack with slim-bullseye base
+- PORT environment variable handled correctly in CMD
 - Some packages may not be available in Railway's environment
 - Fallback to essential packages only if build fails
 - Test locally first: `docker build -f Dockerfile.simple .`
