@@ -72,50 +72,56 @@ docker run -p 8000:8000 easyocr-bukti-setor
 docker-compose up -d
 ```
 
-## Deployment ke Railway
+## Deployment ke Railway (Recommended)
 
-### Langkah 1: Persiapan
+### 🚀 Quick Deploy (Simple App)
 
-1. Fork/clone repository ini
-2. Pastikan semua file ada:
-   - `app.py`
-   - `requirements.txt`
-   - `Dockerfile`
-   - `nixpacks.toml`
-   - `Procfile`
+Untuk deployment cepat dan testing:
 
-### Langkah 2: Deploy ke Railway
+1. **Fork/Clone Repository**
 
-1. Buka [Railway.app](https://railway.app)
-2. Login dengan GitHub
-3. Klik "New Project" → "Deploy from GitHub repo"
-4. Pilih repository EasyOCR ini
-5. Railway akan otomatis detect Dockerfile dan deploy
+   ```bash
+   git clone <repository-url>
+   cd EasyOCR
+   ```
 
-### Langkah 3: Konfigurasi Environment
+2. **Deploy ke Railway**
 
-Tambahkan environment variables di Railway dashboard:
+   - Buka [Railway.app](https://railway.app)
+   - Login dengan GitHub
+   - Klik "New Project" → "Deploy from GitHub repo"
+   - Pilih repository EasyOCR ini
+   - Railway akan auto-detect dan deploy
 
-```
-PORT=8000
-UPLOAD_FOLDER=uploads
-ALLOWED_EXTENSIONS=pdf,jpg,jpeg,png
-FRONTEND_URL=https://proyek-pajak.vercel.app
-SECRET_KEY=your-secret-key-here
-```
+3. **Test Deployment**
+   ```bash
+   # Replace 'your-app.railway.app' dengan URL Railway Anda
+   python test_app.py your-app.railway.app
+   ```
 
-### Langkah 4: Testing
+### 📈 Upgrade ke Full OCR
 
-Setelah deployment selesai, test endpoint:
+Setelah simple app berhasil, upgrade ke full OCR:
 
-```bash
-# Health check
-curl https://your-railway-app.railway.app/health
+1. **Run Upgrade Script**
 
-# Upload bukti setor (contoh)
-curl -X POST https://your-railway-app.railway.app/api/bukti_setor/process \
-  -F "file=@bukti_setor.jpg"
-```
+   ```bash
+   chmod +x upgrade_to_full_ocr.sh
+   ./upgrade_to_full_ocr.sh
+   ```
+
+2. **Commit dan Push**
+
+   ```bash
+   git add .
+   git commit -m "Upgrade to full OCR"
+   git push
+   ```
+
+3. **Monitor Railway Logs**
+   - Buka Railway dashboard
+   - Lihat deployment logs
+   - Test OCR endpoints setelah deployment selesai
 
 ## API Endpoints
 

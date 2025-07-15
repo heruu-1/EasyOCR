@@ -4,55 +4,95 @@
 import sys
 import os
 import requests
+import time
 from pathlib import Path
 
-def test_health_endpoint():
-    """Test health check endpoint"""
+def test_endpoint(url, description):
+    """Test an endpoint"""
     try:
-        response = requests.get("http://localhost:8000/health")
+        print(f"🔍 Testing {description}...")
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
-            print("✅ Health check berhasil")
-            print(f"Response: {response.json()}")
+            print(f"✅ {description} berhasil")
+            try:
+                data = response.json()
+                print(f"   Response: {data}")
+            except:
+                print(f"   Response: {response.text[:100]}...")
             return True
         else:
-            print(f"❌ Health check gagal: {response.status_code}")
+            print(f"❌ {description} gagal: {response.status_code}")
+            print(f"   Response: {response.text[:200]}")
             return False
     except Exception as e:
-        print(f"❌ Error connecting to app: {e}")
+        print(f"❌ Error testing {description}: {e}")
         return False
 
-def test_main_endpoint():
-    """Test main endpoint"""
-    try:
-        response = requests.get("http://localhost:8000/")
-        if response.status_code == 200:
-            print("✅ Main endpoint berhasil")
-            print(f"Response: {response.json()}")
-            return True
-        else:
-            print(f"❌ Main endpoint gagal: {response.status_code}")
-            return False
-    except Exception as e:
-        print(f"❌ Error connecting to main endpoint: {e}")
-        return False
+def test_local():
+    """Test local deployment"""
+    base_url = "http://localhost:8000"
+    print(f"🧪 Testing Local Deployment: {base_url}")
+    print("=" * 60)
+    
+    tests = [
+        (f"{base_url}/health", "Health Check"),
+        (f"{base_url}/", "Main Endpoint"),
+        (f"{base_url}/api/bukti_setor/process", "OCR Process Endpoint (GET)")
+    ]
+    
+    results = []
+    for url, desc in tests:
+        results.append(test_endpoint(url, desc))
+    
+    return all(results)
+
+def test_railway(app_url):
+    """Test Railway deployment"""
+    print(f"🚀 Testing Railway Deployment: {app_url}")
+    print("=" * 60)
+    
+    tests = [
+        (f"{app_url}/health", "Health Check"),
+        (f"{app_url}/", "Main Endpoint"),
+        (f"{app_url}/api/bukti_setor/process", "OCR Process Endpoint")
+    ]
+    
+    results = []
+    for url, desc in tests:
+        results.append(test_endpoint(url, desc))
+    
+    return all(results)
 
 def main():
-    print("🚀 Testing EasyOCR Bukti Setor Application")
-    print("=" * 50)
+    print("🚀 EasyOCR Bukti Setor - Deployment Tester")
+    print("=" * 60)
     
-    # Test endpoints
-    health_ok = test_health_endpoint()
-    main_ok = test_main_endpoint()
+    if len(sys.argv) > 1:
+        # Test Railway deployment
+        app_url = sys.argv[1]
+        if not app_url.startswith('http'):
+            app_url = f"https://{app_url}"
+        
+        success = test_railway(app_url)
+    else:
+        # Test local deployment
+        success = test_local()
     
-    print("\n" + "=" * 50)
-    if health_ok and main_ok:
+    print("\n" + "=" * 60)
+    if success:
         print("✅ Semua test berhasil!")
         print("📝 Aplikasi siap untuk digunakan")
-        print("🌐 Akses: http://localhost:8000")
     else:
         print("❌ Beberapa test gagal")
-        print("💡 Pastikan aplikasi sudah berjalan dengan: python app.py")
+        print("💡 Periksa logs aplikasi untuk detail error")
         sys.exit(1)
 
 if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        print(f"Usage: python {os.path.basename(__file__)} [railway-app-url]")
+        print("Examples:")
+        print(f"  python {os.path.basename(__file__)}  # Test local")
+        print(f"  python {os.path.basename(__file__)} your-app.railway.app  # Test Railway")
+        print()
+    
     main()

@@ -1,11 +1,12 @@
 [start]
-cmd = "gunicorn --bind 0.0.0.0:$PORT app:app --workers=2 --timeout=300"
+cmd = "python simple_app.py"
 
 [phases.setup]
-nixPkgs = ["python39", "tesseract", "poppler_utils"]
+nixPkgs = ["python39"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = ["pip install -r requirements-simple.txt"]
 
 [variables]
 PYTHONPATH = "/app"
+FLASK_ENV = "production"
